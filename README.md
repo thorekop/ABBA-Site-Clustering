@@ -1,5 +1,5 @@
 # Code repository for analyses conducted in Koppetsch et al. (2023)
 
-This code repository is associated with our manuscript entitled "Among-species rate variation produces false signals of introgression", which is available from [BioRxiv](https://www.biorxiv.org/content/TOBEADDED](https://www.biorxiv.org/content/10.1101/2023.05.21.541635v1).
+This code repository is associated with our manuscript entitled "Among-species rate variation produces false signals of introgression", which is available from [BioRxiv](https://www.biorxiv.org/content/10.1101/2023.05.21.541635v1).
 
 The `src` directory contains a script named `run_all.sh` that specifies in which order all other scripts need to be executed. Please note, that the `run_all.sh` script is not intended to be executed itself, as some of the other scripts can not run immediately one after another. In many cases, slurm jobs are triggered by those scripts, meaning that first, those scripts will need to be run on a server equipped with the slurm system (or they need to be adjusted), and second, downstream scripts can only be executed once those slurm jobs have finished. Note also, that the total run time of for simulating genomic data (across the range of parameters selected) using the program msprime will be on the order of weeks.
