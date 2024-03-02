@@ -1,9 +1,9 @@
 # thore Mon Aug 30 17:09:03 CEST 2021
 
 # Read table 'iqtree.txt'.
-iqtree <- read.delim("../res/tables/iqtree.txt")
+iqtree <- read.delim("../res/tables/iqtree_20231203.txt")
 
-filename <- "../res/tables/iqtree_stats.txt"
+filename <- "../res/tables/iqtree_stats_20231203.txt"
 line <- paste("pop_size", "div_time", "rec_rate", "mut_rate", "intr_rate", "P2_rate", "align_length", "mean_D", "stdev_D", "n_significant", sep = '\t')
 write(line, file=filename)
 
@@ -11,9 +11,9 @@ for (pop_size in 1e5){
     for (div_time in c(1e7,2e7,3e7)){
         for (rec_rate in 1e-8){
             for (mut_rate in 2e-9){
-                for (intr_rate in c(0,1e-6,1e-7,1e-8,1e-9)){
-                    for (P2_rate in c(0.25,0.5,1,2,4)){
-		    	for (align_length in c(200,500,1000)){
+                for (intr_rate in c(0,1e-7,1e-8)){ ###changed to 0, 1e-7,1e-8 only!!!!: for (intr_rate in c(0,1e-6,1e-7,1e-8,1e-9))
+                    for (P2_rate in c(0.25,1,4)){ ###changed to 0.25,1,4 only!!!!: for (P2_rate in c(0.25,0.5,1,2,4))
+		    	for (align_length in 500){ ###changed to align_length=500 only!!!!: for (align_length in c(200,500,1000))
 
                         # Select parameters to be included in a subset.
                         t = iqtree[(iqtree$pop_size==pop_size & iqtree$div_time==div_time & iqtree$rec_rate==rec_rate & iqtree$mut_rate==mut_rate & iqtree$intr_rate==intr_rate & iqtree$P2_rate==P2_rate & iqtree$align_length==align_length),]

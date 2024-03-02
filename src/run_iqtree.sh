@@ -4,10 +4,10 @@
 acct=nn9883k
           
 # Make the result directory.
-mkdir -p ../res/iqtree
+mkdir -p ../res/iqtree20231101
 
 # Make the log directory.
-mkdir -p ../log/iqtree
+mkdir -p ../log/iqtree20231101
 
 # Check for every single vcf-file if dsuite-file present.
 for vcf in ../res/msprime/pop_size_1e5*mut_rate_2e-9*.vcf
@@ -17,14 +17,14 @@ do
     vcf_id=`basename ${vcf%.vcf}`
 
     # Set the path.
-    path=../res/iqtree/${vcf_id}
+    path=../res/iqtree20231101/${vcf_id}
 
-    for length in 200 500 1000
+    for length in 500 #200 500 1000
     do
 	
 	# Set the prefix.
 	prefix="iqtree_${length}"
-
+	
 	# Set the number.
 	if [ ${length} == 200 ]
 	then 
@@ -42,15 +42,15 @@ do
 
             # Check how many jobs running.
             n_runs=`squeue -u thore | tail -n +2 | wc -l`
-            if (( ${n_runs} < 400 ))
+            if (( ${n_runs} < 1400 ))
             then
 
 		# Set the log file.
-		log=../log/iqtree/${vcf_id}_${prefix}.txt
+		log=../log/iqtree20231101/${vcf_id}_${prefix}.txt
 		rm -f ${log}
 
 		# Run IQ-TREE.
-		sbatch --account ${acct} -o ${log} run_iqtree.slurm ${vcf} ${prefix} ${number} ${path} ${length}
+		sbatch --account ${acct} -o ${log} run_iqtree_rescue.slurm ${vcf} ${prefix} ${number} ${path} ${length}
 	    fi
         fi
     done

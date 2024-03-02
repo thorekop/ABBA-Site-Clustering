@@ -6,7 +6,7 @@
 #SBATCH --job-name=iqtree
 #
 # Wall clock limit:
-#SBATCH --time=15:00:00
+#SBATCH --time=96:00:00
 #
 # Processor and memory usage:
 #SBATCH --ntasks-per-node=1
@@ -18,11 +18,11 @@ set -o nounset # Treat any unset variables as an error
 module --quiet purge # Reset the modules to the system default
 
 # Load modules.
-module load Python/3.8.2-GCCcore-9.3.0
-module load IQ-TREE/2.1.2-foss-2020a #add module name
-module load BCFtools/1.10.2-GCC-9.3.0
-module load Ruby/2.7.2-GCCcore-9.3.0
-module load R/4.0.0-foss-2020a
+module load Python/3.10.4-GCCcore-11.3.0 #Python/3.8.2-GCCcore-9.3.0
+module load IQ-TREE/2.2.2.3-gompi-2022a #IQ-TREE/2.1.2-foss-2020a #add module name
+module load BCFtools/1.15.1-GCC-11.3.0 #BCFtools/1.10.2-GCC-9.3.0
+module load Ruby/3.0.5-GCCcore-11.3.0 #Ruby/2.7.2-GCCcore-9.3.0
+module load R/4.2.1-foss-2022a #R/4.0.0-foss-2020a
 
 # Get the command-line arguments.
 vcf=${1}
@@ -51,6 +51,7 @@ do
 done
 
 # Run iqtree and collapse nodes with short branches to polytomies..
+echo "Run iqtree."
 for phy in ${path}/${prefix}*.phy
 do
     # Run iqtree.

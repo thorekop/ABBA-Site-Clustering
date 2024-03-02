@@ -18,18 +18,19 @@ set -o nounset # Treat any unset variables as an error
 module --quiet purge # Reset the modules to the system default
 
 # Load modules.
-module load R/4.0.0-foss-2020a
-module load Python/3.8.2-GCCcore-9.3.0
-module load Beast/2.6.4-GCC-9.3.0 #add module name
-module load BCFtools/1.10.2-GCC-9.3.0
-module load Ruby/2.7.2-GCCcore-9.3.0
+module load R/4.2.1-foss-2022a ### Changed from R/4.0.0-foss-2020a
+module load Python/3.10.4-GCCcore-11.3.0 ### Changed from Python/3.8.2-GCCcore-9.3.0
+#module load Beast/2.7.3-GCC-11.3.0 ### Changed from Beast/2.6.4-GCC-9.3.0 #add module name
+module load BCFtools/1.15.1-GCC-11.3.0 ### Changed from BCFtools/1.10.2-GCC-9.3.0
+module load Ruby/3.0.5-GCCcore-11.3.0 ### Changed from Ruby/2.7.2-GCCcore-9.3.0
 
 # Get the command-line arguments.
-vcf=${1}
+gzvcf=${1}
 prefix=${2}
 number=${3} # 5000, 2000, 1000
-path=${4}
+path=`readlink -f ${4}`
 length=${5} # 200, 500, 1000
+
 
 # If the trees results file already exists, then, just run the script to analyze tree asymmetry and quit.
 if [ -f ${path}/${prefix}.trees ]
@@ -37,6 +38,12 @@ then
     ruby analyze_tree_asymmetry.rb ${path}/${prefix}.trees ${path}/${prefix}.txt "tsk_0_1,tsk_5_1,tsk_10_1"
     exit 0
 fi
+
+# Remove fasta files corresponding to nwk-files.
+for nwk in ${path}/${prefix}*.nwk
+do
+    rm -f ${nwk%.nwk}.fasta
+done
 
 # Get the number of fasta and newick files in the directory with the right prefix.
 n_fastas=`ls ${path}/${prefix}*.fasta | wc -l`
@@ -53,7 +60,7 @@ elif [ ${n_fastas_and_nwks} == 0 ]
 then
     # Reduce individuals from vcf-file.
     mkdir -p ${path}
-    bcftools view -s tsk_0,tsk_5,tsk_10,tsk_15 -o ${path}/${prefix}.tmp.vcf ${vcf}
+    bcftools view -s tsk_0,tsk_5,tsk_10,tsk_15 -o ${path}/${prefix}.tmp.vcf ${gzvcf}
 
     # Generate alignments.
     python make_alignments_from_vcf.py ${path}/${prefix}.tmp.vcf ${prefix} -n ${number} -c 20000000 -l ${length} -p ${path} -f fasta
@@ -74,34 +81,55 @@ else
     exit 1
 fi
 
-# Run babette and beast2 and treeannotator.
-for fasta in ${path}/${prefix}*.fasta
-do
-    xml=${fasta%.fasta}.xml
-    div_time=`basename ${path} | cut -d "_" -f 6`
+# Check if max. number of newick files is reached.
+if [ ${n_nwks} == ${number} ]
+then
+    echo "Found ${number} newick files."
+    
+elif [ ! ${n_nwks} == ${number} ]
+then
+    # Copy files to SCRATCH.
+    cp ${path}/*.fasta ${SCRATCH}
+    cp make_xml.r ${SCRATCH}
+    cp convert_to_newick.r ${SCRATCH}
+    cd ${SCRATCH}
 
-    # Run babette.
-    Rscript make_xml.r ${fasta} ${xml} ${div_time} 
+    # Run babette and beast2 and treeannotator.
+    for fasta in ${prefix}*.fasta
+    do
+	xml=${fasta%.fasta}.xml
+	div_time=`basename ${path} | cut -d "_" -f 6`
+	
+	# Run babette.
+	Rscript make_xml.r ${fasta} ${xml} ${div_time} 
+	
+	# Run Beast2.
+	xml_base=`basename ${xml}`
+	/cluster/software/Beast/2.6.7-GCC-10.3.0/bin/beast -overwrite ${xml_base}
+	
+	# Run TreeAnnotator.
+	/cluster/software/Beast/2.6.7-GCC-10.3.0/bin/treeannotator -burnin 20 -heights mean ${fasta%.fasta}.trees ${fasta%.fasta}.tre
+	
+	# Convert to Newick format and copy nwk-files to original directory.
+	Rscript convert_to_newick.r ${fasta%.fasta}.tre ${path}/${fasta%.fasta}.nwk
 
-    # Run Beast2.
-    cd ${path}
-    xml_base=`basename ${xml}`
-    beast -overwrite ${xml_base}
+	# Delete alignments and beast2 output files.
+	rm -f ${fasta}
+	rm -f ${fasta%.fasta}.trees
+	rm -f ${fasta%.fasta}.tre
+	rm -f ${xml}
+	rm -f ${xml}.state
+	rm -f ${fasta%.fasta}.log
+    done
+    
+    # Return to original directory.
     cd -
+fi
 
-    # Run TreeAnnotator.
-    treeannotator -burnin 20 -heights mean ${fasta%.fasta}.trees ${fasta%.fasta}.tre
-
-    # Convert to Newick format.
-    Rscript convert_to_newick.r ${fasta%.fasta}.tre ${fasta%.fasta}.nwk
-
-    # Delete alignments and beast2 output files.
-    rm -f ${fasta}
-    rm -f ${fasta%.fasta}.trees
-    rm -f ${fasta%.fasta}.tre
-    rm -f ${xml}
-    rm -f ${xml}.state
-    rm -f ${fasta%.fasta}.log
+# Remove fasta files corresponding to nwk-files.
+for nwk in ${path}/${prefix}*.nwk
+do
+    rm -f ${nwk%.nwk}.fasta
 done
 
 # Combine inferred phylogenies into single file.

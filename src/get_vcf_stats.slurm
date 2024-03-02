@@ -26,4 +26,6 @@ prefix=${2}
 
 # Run simulation.
 bcftools stats ${vcf} > ${prefix}_stats.txt
+echo -n "Number of bi-allelic sites: " >> ${prefix}_stats.txt
+bcftools view -H -m 2 -M2 ${vcf} | wc -l >> ${prefix}_stats.txt
 

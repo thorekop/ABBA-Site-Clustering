@@ -18,8 +18,8 @@ set -o nounset # Treat any unset variables as an error
 module --quiet purge # Reset the modules to the system default
 
 # Load modules.
-module load Ruby/2.7.2-GCCcore-9.3.0
-module load R/4.0.0-foss-2020a
+module load Ruby/3.2.2-GCCcore-12.2.0 #Ruby/2.7.2-GCCcore-9.3.0
+module load R/4.2.2-foss-2022b #R/4.0.0-foss-2020a
 
 # Get the command line arguments.
 trees=${1}

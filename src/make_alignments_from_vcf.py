@@ -78,6 +78,7 @@ if sys.version_info[0] < 3:
     sys.exit(0)
 import argparse
 import textwrap
+import numpy as np 
 from random import randint
 import copy
 from pathlib import Path
@@ -136,10 +137,16 @@ parser.add_argument(
     '-f',
     nargs=1,
     type=str,
-    default=["./"],
+    default=["phylip"],
     dest='file_format',
     help='Alignment file format (fasta or phylip) (default: phylip)'
         )
+parser.add_argument(
+    '-s',
+    action='store_true',
+    dest='stats',
+    help="Only produce alignment stats, don't actually export alignments."
+    )
 parser.add_argument(
     'vcf',
     nargs=1,
@@ -164,6 +171,7 @@ path = args.path[0] + "/"
 path = path.replace("//","/")
 Path(path).mkdir(parents=True, exist_ok=True)
 file_format = args.file_format[0].lower()
+stats = args.stats
 
 # Make sure that the file format is accepted.
 if file_format not in ["phylip", "fasta"]:
@@ -192,6 +200,8 @@ align_refs = []
 align_alts = []
 align_gts = []
 ids = []
+ns_variable = []
+ns_pi = []
 with open(vcf_name) as vcf:
 	for line in vcf:
 		if line[0:2] == "##":
@@ -223,15 +233,48 @@ with open(vcf_name) as vcf:
 			if align_count < n_align:
 				if pos-1 < align_starts[align_count]:
 					continue
+				# Check if a window is complete, and process it if so.
 				elif pos-1 > align_ends[align_count]:
-					# Generate a new alignment.
-					window = Window(ids, align_length, align_poss, align_refs, align_alts, align_gts)
-					# Write the new alignment.
-					if file_format == "phylip":
-						f_name = path + prefix + "_" + str(align_starts[align_count] + 1) + "_" + str(align_ends[align_count] + 1) + ".phy"
-					elif file_format == "fasta":
-						f_name = path + prefix + "_" + str(align_starts[align_count] + 1) + "_" + str(align_ends[align_count] + 1) + ".fasta"
-					window.write_align(f_name, file_format)
+					# If only stats output is requested, get the numbers of variable and parsimony-informative sites.
+					if stats:
+						# Get the number of variable sites in this window.
+						n_variable = len(align_poss)
+						# Get the number of parsimony-informative sites in this window.
+						n_pi = 0
+						for x in range(len(align_poss)):
+							# Get the array of genotypes as indices.
+							gts_as_indices = []
+							for align_gt in align_gts[x]:
+								if "/" in align_gt:
+									print("ERROR: Genotypes do not seem to be phased but will be assumed to be so!")
+									sys.exit(1)
+								if align_gt.split("|")[0] == ".":
+									print("ERROR: Found missing genotypes!")
+									sys.exit(1)
+								else:
+									gts_as_indices.append(int(align_gt.split("|")[0]))
+								# Below commented to use only the first allele of each genotype.
+								# if align_gt.split("|")[1] == ".":
+								#	gts_as_indices.append(-1)
+								# else:
+								#	gts_as_indices.append(int(align_gt.split("|")[1]))
+							# Assume that the number of values is four.
+							assert len(gts_as_indices) == 4
+							gts_as_indices.sort()
+							if gts_as_indices == [0, 0, 1, 1]:
+								n_pi += 1
+						ns_variable.append(n_variable)
+						ns_pi.append(n_pi)
+
+					else:
+						# Generate a new alignment.
+						window = Window(ids, align_length, align_poss, align_refs, align_alts, align_gts)
+						# Write the new alignment.
+						if file_format == "phylip":
+							f_name = path + prefix + "_" + str(align_starts[align_count] + 1) + "_" + str(align_ends[align_count] + 1) + ".phy"
+						elif file_format == "fasta":
+							f_name = path + prefix + "_" + str(align_starts[align_count] + 1) + "_" + str(align_ends[align_count] + 1) + ".fasta"
+						window.write_align(f_name, file_format)
 
 					# Reset the array of alignment lines and increase the alignment count.
 					align_poss = []
@@ -249,14 +292,18 @@ with open(vcf_name) as vcf:
 # If no variable sites were in the VCF after the end of an alignment window, some alignments may not have been written yet.
 # Complete any unfinished alignments and write these to a files.
 while align_count < n_align:
-	# Generate a new alignment.
-	window = Window(ids, align_length, align_poss, align_refs, align_alts, align_gts)
-	# Write the new alignment.
-	if file_format == "phylip":
-		f_name = path + prefix + "_" + str(align_starts[align_count] + 1) + "_" + str(align_ends[align_count] + 1) + ".phy"
-	elif file_format == "fasta":
-		f_name = path + prefix + "_" + str(align_starts[align_count] + 1) + "_" + str(align_ends[align_count] + 1) + ".fasta"
-	window.write_align(f_name, file_format)
+	if stats:
+		ns_variable.append(0)
+		ns_pi.append(0)
+	else:
+		# Generate a new alignment.
+		window = Window(ids, align_length, align_poss, align_refs, align_alts, align_gts)
+		# Write the new alignment.
+		if file_format == "phylip":
+			f_name = path + prefix + "_" + str(align_starts[align_count] + 1) + "_" + str(align_ends[align_count] + 1) + ".phy"
+		elif file_format == "fasta":
+			f_name = path + prefix + "_" + str(align_starts[align_count] + 1) + "_" + str(align_ends[align_count] + 1) + ".fasta"
+		window.write_align(f_name, file_format)
 
 	# Reset the array of alignment lines and increase the alignment count.
 	align_poss = []
@@ -264,3 +311,7 @@ while align_count < n_align:
 	align_alts = []
 	align_gts = []
 	align_count += 1
+
+# Report the mean number of parsimony-informative sites and the mean number of variable sites.
+if stats:
+	print(str(np.mean(ns_variable)) + "\t" + str(np.mean(ns_pi)))

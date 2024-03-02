@@ -6,7 +6,7 @@
 #SBATCH --job-name=dsuitks
 #
 # Wall clock limit:
-#SBATCH --time=1:00:00
+#SBATCH --time=2:00:00
 #
 # Processor and memory usage:
 #SBATCH --ntasks-per-node=1

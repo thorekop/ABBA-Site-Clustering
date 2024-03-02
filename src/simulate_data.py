@@ -1,10 +1,15 @@
 # thore Fri May 7 16:13:12 CEST 2021
 
-# import modules
+# Import modules
 import msprime
 import sys
+import numpy
 
-# get the file names and parameter values (command line arguments)
+# Set chromosome length.
+seq_length = 2e7
+
+
+# Get the file names and parameter values (command line arguments)
 f_name = sys.argv[1]
 pop_size = float(sys.argv[2]) # population size
 div_time = float(sys.argv[3]) # divergence rate
@@ -15,7 +20,23 @@ if sys.argv[4] == "var":
     rec_map = msprime.RateMap.read_hapmap("../data/maps/GRCh37_chr20_truncated.txt")
 else:
     rec_rate = float(sys.argv[4]) # recombination rate
-mut_rate = float(sys.argv[5]) # mutation rate
+use_mut_map = False
+if sys.argv[5] == "var":
+    use_mut_map = True
+    # Build a map of variable mutation rates.
+    current_pos=0.
+    mut_map_window_size = 1000
+    mut_map_positions = [current_pos]
+    mut_map_rates = []
+    while current_pos + mut_map_window_size < seq_length:
+        mut_map_positions.append(current_pos + mut_map_window_size)
+        current_pos = current_pos + mut_map_window_size
+        mut_map_rates.append(numpy.random.exponential(scale=2e-9)) # hardcoding the mean mutation rate for variable rates.
+    mut_map_positions.append(seq_length)
+    mut_map_rates.append(numpy.random.exponential(scale=2e-9)) # hardcoding the mean mutation rate for variable rates.
+    mut_map = msprime.RateMap(position=mut_map_positions, rate=mut_map_rates)
+else:
+    mut_rate = float(sys.argv[5]) # mutation rate
 intr_rate = float(sys.argv[6]) # introgression rate
 P2_rate = float(sys.argv[7]) # P2 rate -> branch length variation
 seed = int(sys.argv[8]) # random number
@@ -65,11 +86,18 @@ else:
         random_seed=seed)
 
 # add mutations to the tree sequence
-mts = msprime.sim_mutations(
-    ts,
-    rate=mut_rate,
-    model=msprime.HKY(kappa=2.0),
-    random_seed=seed)
+if use_mut_map:
+    mts = msprime.sim_mutations(
+        ts,
+        rate=mut_map,
+        model=msprime.HKY(kappa=2.0),
+        random_seed=seed)
+else:
+    mts = msprime.sim_mutations(
+        ts,
+        rate=mut_rate,
+        model=msprime.HKY(kappa=2.0),
+        random_seed=seed)
 
 # write vcf file
 with open(f_name, "w") as vcf_file:

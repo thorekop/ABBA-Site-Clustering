@@ -28,7 +28,7 @@ do
     gzvcf_id=`basename ${gzvcf%.vcf.gz}`
 
     # Set the prefix.
-    prefix=../res/dsuite/${gzvcf_id}_ks_rep # XXX Change this again by removing "_rep"
+    prefix=../res/dsuite_p-val1.2/${gzvcf_id}_ks
 
     # Check if the results are already available.
     if [ ! -f ${prefix}_tree.txt ]
@@ -40,7 +40,7 @@ do
 	    then
 
 	        # Set the log file.
-	        log=../log/dsuite/${gzvcf_id}_ks_rep.txt # XXX Change this again by removing "_rep"
+	        log=../log/dsuite_p-val1.2/${gzvcf_id}_ks.txt
 	        rm -f ${log}
 
 	        # Run dsuite.

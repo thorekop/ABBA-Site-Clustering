@@ -18,7 +18,8 @@ set -o nounset # Treat any unset variables as an error
 module --quiet purge # Reset the modules to the system default
 
 # Load modules.
-module load Dsuite/20210309-GCC-9.3.0 #add module name
+#module load Dsuite/20210309-GCC-9.3.0 #add module name
+module load Dsuite/20210718-GCC-10.3.0
 
 # Get the command-line arguments.
 vcf=${1}

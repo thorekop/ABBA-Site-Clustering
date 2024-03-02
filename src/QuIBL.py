@@ -6,7 +6,7 @@ import itertools as itt
 import sys as sys
 import numpy as np
 from math import log
-import ConfigParser
+import configparser
 import csv
 from joblib import Parallel, delayed
 import multiprocessing
@@ -317,7 +317,7 @@ def outputFormatter(outputDict,inputDict):
 
 def inputReader(filepath):
 	#Reads the input file and passes settings to outputFormatter
-	config=ConfigParser.ConfigParser()
+	config=configparser.ConfigParser()
 	config.read(filepath)
 	inputDict={}
 	for flag in config.options('Input'):

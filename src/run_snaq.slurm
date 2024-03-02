@@ -18,7 +18,7 @@ set -o nounset # Treat any unset variables as an error
 module --quiet purge # Reset the modules to the system default
 
 # Load modules.
-module load Julia/1.6.1-linux-x86_64 #add module name
+module load Julia/1.8.5-linux-x86_64 ### Changed from Julia/1.6.1-linux-x86_64 #add module name
 
 # Get the command line arguments.
 treefile=${1}

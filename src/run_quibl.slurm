@@ -18,7 +18,7 @@ set -o nounset # Treat any unset variables as an error
 module --quiet purge # Reset the modules to the system default
 
 # Load modules.
-module load Python/2.7.18-GCCcore-9.3.0 #add module name
+module load Python/3.11.3-GCCcore-12.3.0 ### module updated from Python/2.7.18-GCCcore-9.3.0 #add module name
 
 # Get the command line arguments.
 quibl_settings=${1}
